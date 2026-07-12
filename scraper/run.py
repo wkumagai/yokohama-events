@@ -106,6 +106,9 @@ def main():
             stats[label] = len(evs)
             print(f"[{label}] {len(evs)} events")
             all_events.extend(evs)
+        except ModuleNotFoundError:
+            print(f"[{label}] not implemented yet, skipped")
+            stats[label] = "not implemented"
         except Exception as e:
             import traceback
             traceback.print_exc()
