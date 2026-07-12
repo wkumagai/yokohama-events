@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ヨコハマイベント帖 — 馬車道・桜木町を中心に</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a5d8f'/%3E%3Cpath d='M20 62c8-6 16-6 24 0s16 6 24 0 12-4 16 0' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='34' r='12' fill='%23f0c04a'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --card: #ffffff;
+    --ink: #26221c;
+    --sub: #71695b;
+    --faint: #a99f8d;
+    --line: #e6e1d5;
+    --accent: #1a5d8f;
+    --accent-deep: #16405e;
+    --accent-warm: #b3542c;
+    --gold: #f0c04a;
+    --chip-bg: #efebe1;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(45,35,15,.05);
+    --shadow-hover: 0 6px 20px rgba(45,35,15,.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- ヘッダー ---------- */
+  header {
+    background:
+      radial-gradient(1200px 400px at 85% -50%, rgba(240,192,74,.25), transparent 60%),
+      linear-gradient(135deg, #12344c 0%, #16405e 35%, #1a5d8f 80%, #2e7db3 100%);
+    color: #fff; padding: 30px 20px 24px;
+    position: relative; overflow: hidden;
+  }
+  header::after { /* 波モチーフ */
+    content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 14px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 14' preserveAspectRatio='none'%3E%3Cpath d='M0 14 Q15 4 30 10 T60 10 T90 10 T120 10 V14 Z' fill='%23f7f5f0'/%3E%3C/svg%3E") repeat-x;
+    background-size: 120px 14px;
+  }
+  header .wrap { max-width: 1120px; margin: 0 auto; }
+  header h1 {
+    font-size: 27px; font-weight: 800; letter-spacing: .08em;
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  header h1 .sub { font-size: 12.5px; font-weight: 400; opacity: .8; letter-spacing: .14em; }
+  .stats { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .stat {
+    background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.22);
+    border-radius: 999px; padding: 5px 16px; font-size: 12.5px; cursor: pointer;
+    transition: background .15s; backdrop-filter: blur(4px);
+  }
+  .stat:hover { background: rgba(255,255,255,.24); }
+  .stat b { font-size: 15px; color: var(--gold); margin: 0 2px; font-weight: 700; }
+  header p.meta { font-size: 11px; opacity: .6; margin-top: 12px; letter-spacing: .05em; }
+
+  /* ---------- フィルタ ---------- */
+  .controls {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(247,245,240,.92); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 20px 10px;
+  }
+  .controls .inner { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .row .label {
+    font-size: 10.5px; color: var(--faint); min-width: 4.2em;
+    letter-spacing: .22em; font-weight: 600;
+  }
+  .chip {
+    border: 1px solid transparent; background: var(--chip-bg); color: #4d463a;
+    border-radius: 999px; padding: 4px 13px; font-size: 12.5px; cursor: pointer;
+    transition: all .15s; user-select: none; line-height: 1.5;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.on { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(26,93,143,.35); }
+  #search {
+    flex: 1; min-width: 180px; max-width: 320px; padding: 6px 14px; font-size: 13px;
+    border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink);
+  }
+  #search:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  label.toggle { font-size: 12px; color: var(--sub); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+  label.toggle input { accent-color: var(--accent); }
+  #count { font-size: 12px; color: var(--faint); margin-left: auto; }
+
+  /* ---------- 一覧 ---------- */
+  main { max-width: 1120px; margin: 6px auto 60px; padding: 0 20px; }
+  .month-head {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 15px; font-weight: 800; color: var(--accent-deep);
+    padding: 26px 2px 6px; letter-spacing: .1em;
+  }
+  .month-head .n { font-size: 11.5px; font-weight: 600; color: var(--faint); letter-spacing: .05em; }
+  .month-head::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 13px 14px;
+    display: grid; grid-template-columns: 56px 1fr; gap: 12px;
+    transition: box-shadow .18s, transform .18s, border-color .18s;
+    position: relative; overflow: hidden;
+    animation: rise .25s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+  .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); border-color: #d8d2c2; }
+  .card::before { /* カテゴリ色の背表紙 */
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--cat-color, var(--accent));
+  }
+
+  .datebox {
+    align-self: start; text-align: center;
+    background: #f4f6f8; border: 1px solid #e3e8ec; border-radius: 9px;
+    padding: 6px 2px 5px; line-height: 1.15;
+  }
+  .datebox .m { font-size: 9.5px; color: var(--sub); letter-spacing: .1em; font-weight: 600; }
+  .datebox .d { font-size: 21px; font-weight: 800; color: var(--ink); }
+  .datebox .d.sat { color: #2b6cb0; }
+  .datebox .d.sun { color: #c0392b; }
+  .datebox .w { font-size: 9.5px; color: var(--sub); }
+  .datebox .till { font-size: 9px; color: var(--accent-warm); font-weight: 700; border-top: 1px dashed #d8dee3; margin-top: 4px; padding-top: 3px; }
+
+  .card .body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .card .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 10.5px; }
+  .badge { border-radius: 4px; padding: 1px 7px; font-weight: 700; letter-spacing: .03em; }
+  .badge.cat { background: color-mix(in srgb, var(--cat-color, var(--accent)) 12%, white); color: var(--cat-color, var(--accent)); }
+  .badge.now { background: var(--accent-warm); color: #fff; }
+  .badge.soon { background: #fdf1e6; color: var(--accent-warm); }
+  .badge.annual { background: #f6efdc; color: #8a6d1f; }
+  .badge.reserve { background: #fdeaea; color: #b4302e; }
+  .card h3 {
+    font-size: 14.5px; line-height: 1.45; font-weight: 700;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card h3 a { color: inherit; text-decoration: none; }
+  .card h3 a:hover { color: var(--accent); }
+  .card h3 a::after { content: ""; position: absolute; inset: 0; } /* カード全面クリック */
+  .card .when { font-size: 12.5px; font-weight: 700; color: var(--accent-warm); }
+  .card .when .approx { font-weight: 400; font-size: 10.5px; color: var(--faint); }
+  .card .where { font-size: 12px; color: var(--sub); display: flex; gap: 7px; flex-wrap: wrap; align-items: baseline; }
+  .card .where .area { color: var(--accent); font-weight: 700; font-size: 11px; letter-spacing: .03em; }
+  .card .where .venue { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .card .note { font-size: 11px; color: var(--sub); }
+  .card .src { font-size: 10px; color: var(--faint); margin-top: auto; padding-top: 3px; }
+
+  .fav-btn {
+    position: absolute; top: 6px; right: 6px; z-index: 2;
+    width: 29px; height: 29px; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.85); border: 1px solid var(--line); border-radius: 50%;
+    font-size: 16px; line-height: 1; padding: 0;
+    cursor: pointer; color: #b8ac8f;
+    box-shadow: 0 1px 3px rgba(45,35,15,.1);
+    transition: transform .15s, color .15s, background .15s, border-color .15s;
+  }
+  .fav-btn:hover { transform: scale(1.15); color: var(--gold); border-color: var(--gold); }
+  .fav-btn.on {
+    color: #fff; background: var(--gold); border-color: var(--gold);
+    text-shadow: 0 1px 2px rgba(140,105,10,.3);
+    box-shadow: 0 2px 8px rgba(240,192,74,.55);
+  }
+  #fav-chip { border-color: #e0c98a; color: #8a6d1f; font-weight: 700; background: #fbf3de; }
+  #fav-chip:hover { border-color: var(--gold); color: #8a6d1f; }
+  #fav-chip.on { background: var(--gold); color: #4a3a08; border-color: var(--gold); box-shadow: 0 2px 8px rgba(240,192,74,.5); }
+
+  .month-head.fav-pin { color: #8a6d1f; }
+  .month-head.fav-pin::after { background: linear-gradient(90deg, var(--gold), transparent); }
+  .fav-pin-grid .card {
+    border-color: #ecd9a0;
+    background: linear-gradient(180deg, #fffbf0, var(--card) 65%);
+    box-shadow: 0 0 0 1px rgba(240,192,74,.3), var(--shadow);
+  }
+  .fav-pin-grid .card:hover { box-shadow: 0 0 0 1px rgba(240,192,74,.45), var(--shadow-hover); }
+
+  .more-btn {
+    display: block; margin: 14px auto 0; padding: 8px 30px;
+    background: var(--card); color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all .15s;
+  }
+  .more-btn:hover { background: var(--accent); color: #fff; }
+
+  .empty { color: var(--sub); padding: 34px 0; text-align: center; font-size: 13.5px; }
+
+  footer {
+    border-top: 1px solid var(--line); color: var(--faint); font-size: 11.5px;
+    max-width: 1120px; margin: 0 auto; padding: 20px 20px 46px; line-height: 1.8;
+  }
+  #totop {
+    position: fixed; right: 18px; bottom: 18px; width: 42px; height: 42px;
+    border-radius: 50%; border: none; background: var(--accent); color: #fff;
+    font-size: 18px; cursor: pointer; box-shadow: 0 4px 14px rgba(26,93,143,.4);
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  #totop.show { opacity: .92; pointer-events: auto; }
+
+  @media (max-width: 640px) {
+    header h1 { font-size: 20px; }
+    .controls { padding: 9px 12px 8px; }
+    .row .label { min-width: 100%; }
+    main { padding: 0 12px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>ヨコハマイベント帖<span class="sub">馬車道・桜木町を中心とした横浜のイベント・催し物</span></h1>
+    <div class="stats" id="stats"></div>
+    <p class="meta" id="generated"></p>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="inner">
+    <div class="row" id="when-row">
+      <span class="label">期間</span>
+      <span class="chip on" data-when="all">すべて</span>
+      <span class="chip" data-when="today">今日</span>
+      <span class="chip" data-when="weekend">今週末</span>
+      <span class="chip" data-when="week">7日以内</span>
+      <span class="chip" data-when="month">30日以内</span>
+      <span class="chip" id="fav-chip" title="お気に入りだけ表示">★ お気に入り</span>
+      <span id="count"></span>
+    </div>
+    <div class="row" id="area-row"><span class="label">エリア</span></div>
+    <div class="row" id="cat-row"><span class="label">カテゴリ</span></div>
+    <div class="row">
+      <span class="label">検索</span>
+      <input id="search" type="search" placeholder="キーワード（イベント名・会場）">
+      <label class="toggle"><input type="checkbox" id="ward-toggle" checked> 区民施設の講座・教室も表示</label>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div id="list"></div>
+</main>
+
+<footer>
+  <p>収集元: 横浜市観光情報サイト ／ ヨコハマ・アートナビ ／ みなとみらい21公式 ／ 横浜市 区版イベント情報(中区・西区) ／ 横浜赤レンガ倉庫 ／ 横浜市役所アトリウム ／ 恒例イベント年間リスト</p>
+  <p>各イベントの詳細・最新情報は必ずリンク先の公式ページで確認してください。「日程目安」の恒例イベントは過去実績からの推定です。<br>更新: <code>python3 scraper/run.py</code> → ブラウザ再読み込み</p>
+</footer>
+
+<button id="totop" title="先頭へ">↑</button>
+
+<script>
+// データは毎日更新されるためキャッシュを避けて読み込む
+(function loadData() {
+  const s = document.createElement("script");
+  s.src = "../data/events.data.js?t=" + Date.now();
+  s.onload = () => window.__initApp();
+  s.onerror = () => { window.EVENTS = []; window.__initApp(); };
+  document.head.appendChild(s);
+})();
+window.__initApp = function () {
+  const EVENTS = window.EVENTS || [];
+  const META = window.EVENTS_META || {};
+
+  const AREAS = {
+    bashamichi: "馬車道", sakuragicho: "桜木町・野毛", kannai: "関内・日本大通り",
+    mm: "みなとみらい・新港", yamashita: "山下・中華街・元町・山手",
+    honmoku: "三溪園・本牧", yokohama_st: "横浜駅周辺", other: "その他",
+  };
+  const CATS = {
+    music: "🎵 音楽", stage: "🎭 舞台・ダンス", traditional: "🏮 伝統芸能",
+    art: "🎨 アート", museum: "🏛 歴史・学び", festival: "🎪 祭り・行事",
+    food: "🍺 グルメ", night: "✨ イルミ・花火", family: "👨‍👩‍👧 ファミリー",
+    sports_other: "🏟 スポーツ・他",
+  };
+  const CAT_COLORS = {
+    music: "#7048b0", stage: "#b03a76", traditional: "#8a6d1f",
+    art: "#c25e1e", museum: "#3f6b4f", festival: "#c0392b",
+    food: "#a3701c", night: "#31589e", family: "#2e8b8b",
+    sports_other: "#5d6b79",
+  };
+  const SRC = {
+    welcome_city: "横浜市観光情報", artnavi: "アートナビ", mm21: "みなとみらい21",
+    akarenga: "赤レンガ倉庫", atrium: "市役所アトリウム",
+    ward_naka: "中区イベント情報", ward_nishi: "西区イベント情報", annual: "恒例イベント",
+  };
+  const SECTION_LIMIT = 24;
+
+  const state = { when: "all", areas: new Set(), cats: new Set(), q: "", ward: true, expanded: new Set(), favOnly: false };
+
+  // ---------- お気に入り(localStorage永続) ----------
+  const FAV_KEY = "yokohama-events-favs";
+  let favs;
+  try { favs = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || "[]")); }
+  catch (e) { favs = new Set(); }
+  function saveFavs() {
+    try { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); } catch (e) {}
+  }
+  function toggleFav(id) {
+    favs.has(id) ? favs.delete(id) : favs.add(id);
+    saveFavs();
+    updateFavChip();
+    buildStats();
+  }
+  const favChip = document.getElementById("fav-chip");
+  function updateFavChip() {
+    favChip.textContent = `★ お気に入り${favs.size ? ` (${favs.size})` : ""}`;
+    favChip.classList.toggle("on", state.favOnly);
+  }
+  favChip.onclick = () => { state.favOnly = !state.favOnly; updateFavChip(); refresh(); };
+
+  // ---------- フィルタチップ ----------
+  const areaRow = document.getElementById("area-row");
+  for (const [id, label] of Object.entries(AREAS)) {
+    if (id === "other") continue;
+    const c = document.createElement("span");
+    c.className = "chip"; c.textContent = label; c.dataset.area = id;
+    c.onclick = () => { toggleSet(state.areas, id, c); refresh(); };
+    areaRow.appendChild(c);
+  }
+  const catRow = document.getElementById("cat-row");
+  for (const [id, label] of Object.entries(CATS)) {
+    const c = document.createElement("span");
+    c.className = "chip"; c.textContent = label; c.dataset.cat = id;
+    c.style.setProperty("--cat-color", CAT_COLORS[id]);
+    c.onclick = () => { toggleSet(state.cats, id, c); refresh(); };
+    catRow.appendChild(c);
+  }
+  function toggleSet(set, id, el) {
+    if (set.has(id)) { set.delete(id); el.classList.remove("on"); }
+    else { set.add(id); el.classList.add("on"); }
+  }
+  document.querySelectorAll("#when-row .chip[data-when]").forEach(c => {
+    c.onclick = () => setWhen(c.dataset.when);
+  });
+  function setWhen(when) {
+    state.when = when;
+    document.querySelectorAll("#when-row .chip[data-when]").forEach(x =>
+      x.classList.toggle("on", x.dataset.when === when));
+    refresh();
+  }
+  document.getElementById("search").oninput = e => { state.q = e.target.value.trim().toLowerCase(); refresh(); };
+  document.getElementById("ward-toggle").onchange = e => { state.ward = e.target.checked; refresh(); };
+  function refresh() { state.expanded.clear(); render(); }
+
+  // ---------- 日付 ----------
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const WDAY = "日月火水木金土";
+  function d(iso) { return iso ? new Date(iso + "T00:00:00") : null; }
+  function fmt(iso, withYear) {
+    const dt = d(iso); if (!dt) return "";
+    const y = withYear ? `${dt.getFullYear()}年` : "";
+    return `${y}${dt.getMonth() + 1}/${dt.getDate()}(${WDAY[dt.getDay()]})`;
+  }
+  function crossYear(ev) {
+    return ev.end_date && ev.end_date.slice(0, 4) !== ev.start_date.slice(0, 4);
+  }
+  function addDays(base, n) { const x = new Date(base); x.setDate(x.getDate() + n); return x; }
+  function nextWeekend() {
+    const dow = today.getDay();
+    if (dow === 6) return [today, addDays(today, 1)];
+    if (dow === 0) return [today, today];
+    const sat = addDays(today, 6 - dow);
+    return [sat, addDays(sat, 1)];
+  }
+  function whenRange() {
+    if (state.when === "today") return [today, today];
+    if (state.when === "week") return [today, addDays(today, 7)];
+    if (state.when === "month") return [today, addDays(today, 30)];
+    if (state.when === "weekend") return nextWeekend();
+    return null;
+  }
+  function durationDays(ev) {
+    const s = d(ev.start_date), e = d(ev.end_date) || s;
+    return Math.round((e - s) / 86400000) + 1;
+  }
+  function overlaps(ev, from, to) {
+    const s = d(ev.start_date), e = d(ev.end_date) || s;
+    return s <= to && e >= from;
+  }
+
+  function pass(ev) {
+    if (state.favOnly && !favs.has(ev.id)) return false;
+    if (!state.ward && (ev.source === "ward_naka" || ev.source === "ward_nishi")) return false;
+    if (state.areas.size && !state.areas.has(ev.area)) return false;
+    if (state.cats.size && !state.cats.has(ev.category)) return false;
+    if (state.q) {
+      const hay = (ev.title + " " + (ev.venue || "")).toLowerCase();
+      if (!hay.includes(state.q)) return false;
+    }
+    const range = whenRange();
+    if (range) return overlaps(ev, range[0], range[1]);
+    return true;
+  }
+
+  // ---------- カード ----------
+  function esc(s) { return (s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); }
+
+  function dateBox(ev) {
+    const s = d(ev.start_date);
+    const dowCls = s.getDay() === 0 ? "sun" : s.getDay() === 6 ? "sat" : "";
+    const multi = ev.end_date && ev.end_date !== ev.start_date;
+    const e = multi ? d(ev.end_date) : null;
+    const till = multi
+      ? (crossYear(ev) ? `〜'${String(e.getFullYear()).slice(2)} ${e.getMonth() + 1}/${e.getDate()}`
+                       : `〜${e.getMonth() + 1}/${e.getDate()}`)
+      : "";
+    return `<div class="datebox">
+      <div class="m">${s.getMonth() + 1}月</div>
+      <div class="d ${dowCls}">${s.getDate()}</div>
+      <div class="w">${WDAY[s.getDay()]}</div>
+      ${multi ? `<div class="till">${till}</div>` : ""}
+    </div>`;
+  }
+
+  function card(ev) {
+    const s = d(ev.start_date), e = d(ev.end_date);
+    const isNow = s <= today && (e || s) >= today;
+    const soon = !isNow && s > today && s <= addDays(today, 7);
+    let when = fmt(ev.start_date);
+    if (ev.end_date && ev.end_date !== ev.start_date) when += " 〜 " + fmt(ev.end_date, crossYear(ev));
+    const approx = (ev.tags || []).includes("approx");
+    const color = CAT_COLORS[ev.category] || "#1a5d8f";
+    return `<div class="card" style="--cat-color:${color}">
+      <button class="fav-btn ${favs.has(ev.id) ? "on" : ""}" data-fav="${ev.id}" title="お気に入りに追加/解除">${favs.has(ev.id) ? "★" : "☆"}</button>
+      ${dateBox(ev)}
+      <div class="body">
+        <div class="top">
+          <span class="badge cat">${CATS[ev.category] || ev.category}</span>
+          ${isNow ? '<span class="badge now">開催中</span>' : ""}
+          ${soon ? '<span class="badge soon">まもなく</span>' : ""}
+          ${(ev.tags || []).includes("annual") ? '<span class="badge annual">毎年恒例</span>' : ""}
+          ${(ev.tags || []).includes("reservation_required") ? '<span class="badge reserve">🎫 要予約</span>' : ""}
+        </div>
+        <h3><a href="${ev.url || "#"}" target="_blank" rel="noopener">${esc(ev.title)}</a></h3>
+        <div class="when">${when}${approx ? ' <span class="approx">(日程目安)</span>' : ""}</div>
+        <div class="where">
+          <span class="area">${AREAS[ev.area] || ""}</span>
+          ${ev.venue ? `<span class="venue">${esc(ev.venue)}</span>` : ""}
+        </div>
+        ${ev.note ? `<div class="note">${esc(ev.note)}</div>` : ""}
+        <div class="src">出典: ${SRC[ev.source] || ev.source}</div>
+      </div>
+    </div>`;
+  }
+
+  function section(key, title, evs) {
+    if (!evs.length) return "";
+    let html = `<div class="month-head">${title}<span class="n">${evs.length}件</span></div>`;
+    const expanded = state.expanded.has(key);
+    const shown = expanded ? evs : evs.slice(0, SECTION_LIMIT);
+    html += '<div class="grid">' + shown.map(card).join("") + "</div>";
+    if (!expanded && evs.length > SECTION_LIMIT) {
+      html += `<button class="more-btn" data-expand="${key}">残り${evs.length - SECTION_LIMIT}件をすべて表示</button>`;
+    }
+    return html;
+  }
+
+  function render() {
+    const list = document.getElementById("list");
+    const hits = EVENTS.filter(pass);
+    document.getElementById("count").textContent = `${hits.length}件`;
+    if (!hits.length) {
+      const msg = (state.favOnly && !favs.size)
+        ? "まだお気に入りがありません。カードの☆をクリックすると、ここに表示されます。"
+        : "条件に合うイベントが見つかりませんでした";
+      list.innerHTML = `<div class="empty">${msg}</div>`;
+      return;
+    }
+
+    // お気に入りは条件を満たす限り、日付の区分を問わず先頭に固定表示する
+    const showPinned = favs.size > 0 && !state.favOnly;
+    const pinned = showPinned ? hits.filter(ev => favs.has(ev.id)) : [];
+    const rest = showPinned ? hits.filter(ev => !favs.has(ev.id)) : hits;
+
+    let html = "";
+    if (pinned.length) {
+      const sorted = [...pinned].sort((a, b) => (a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : 0));
+      html += `<div class="month-head fav-pin">⭐ お気に入り<span class="n">${sorted.length}件</span></div>`;
+      html += '<div class="grid fav-pin-grid">' + sorted.map(card).join("") + "</div>";
+    }
+    if (whenRange()) {
+      const label = { today: "今日", weekend: "今週末", week: "7日以内", month: "30日以内" }[state.when];
+      const shorts = rest.filter(ev => durationDays(ev) <= 7);
+      const longs = rest.filter(ev => durationDays(ev) > 7);
+      html += shorts.length
+        ? section("shorts", `${label}の単発・短期イベント`, shorts)
+        : `<div class="month-head">${label}の単発・短期イベント<span class="n">0件</span></div><div class="empty">この期間の単発・短期イベントはありません</div>`;
+      html += section("longs", "長期開催中の展覧会・教室など", longs);
+    } else {
+      const ongoing = rest.filter(ev => d(ev.start_date) <= today);
+      const upcoming = rest.filter(ev => d(ev.start_date) > today);
+      html += section("ongoing", "開催中", ongoing);
+      const byMonth = {};
+      for (const ev of upcoming) {
+        (byMonth[ev.start_date.slice(0, 7)] ||= []).push(ev);
+      }
+      for (const [m, evs] of Object.entries(byMonth)) {
+        const [y, mo] = m.split("-");
+        html += section("m" + m, `${y}年${Number(mo)}月`, evs);
+      }
+    }
+    list.innerHTML = html;
+    list.querySelectorAll(".more-btn").forEach(b => {
+      b.onclick = () => { state.expanded.add(b.dataset.expand); render(); };
+    });
+    list.querySelectorAll(".fav-btn").forEach(b => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        toggleFav(b.dataset.fav);
+        render(); // お気に入り区分でカードがピン留め/通常セクション間を移動するため全体を再描画
+      };
+    });
+  }
+
+  // ---------- ヘッダー統計 ----------
+  function buildStats() {
+    const wardless = EVENTS.filter(ev => ev.source !== "ward_naka" && ev.source !== "ward_nishi");
+    const todayShort = wardless.filter(ev => overlaps(ev, today, today) && durationDays(ev) <= 7).length;
+    const [wa, wb] = nextWeekend();
+    const wkShort = wardless.filter(ev => overlaps(ev, wa, wb) && durationDays(ev) <= 7).length;
+    const stats = document.getElementById("stats");
+    stats.innerHTML =
+      `<span class="stat" data-when="today">今日の短期イベント<b>${todayShort}</b>件</span>` +
+      `<span class="stat" data-when="weekend">今週末<b>${wkShort}</b>件</span>` +
+      `<span class="stat" data-when="all">掲載全<b>${EVENTS.length}</b>件</span>` +
+      `<span class="stat" id="stat-fav">★ お気に入り<b>${favs.size}</b>件</span>`;
+    stats.querySelectorAll(".stat[data-when]").forEach(s => {
+      s.onclick = () => { setWhen(s.dataset.when); document.querySelector(".controls").scrollIntoView(); };
+    });
+    document.getElementById("stat-fav").onclick = () => {
+      state.favOnly = true;
+      updateFavChip();
+      refresh();
+      document.querySelector(".controls").scrollIntoView();
+    };
+  }
+
+  // ---------- その他 ----------
+  const totop = document.getElementById("totop");
+  addEventListener("scroll", () => totop.classList.toggle("show", scrollY > 600), { passive: true });
+  totop.onclick = () => scrollTo({ top: 0, behavior: "smooth" });
+
+  document.getElementById("generated").textContent = META.generated_at
+    ? `最終更新 ${META.generated_at.replace("T", " ")}`
+    : "データ未生成: python3 scraper/run.py を実行してください";
+
+  buildStats();
+  updateFavChip();
+  render();
+};
+</script>
+</body>
+</html>
