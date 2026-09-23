@@ -21,4 +21,8 @@
 - データ修復が必要になる典型（＝5類型1、人の判断）:
 
 ## 既知の癖
--
+- 日次スクレイプ（MBP、launchd `com.kuma.yokohama-events-scrape`、毎朝 06:00）の実行記録は
+  `/Users/kuma/yokohama-events/logs/scrape.log` と `data/events.json` の更新時刻で見る。
+  launchd の StandardOutPath（`/tmp/yokohama-events-scrape-launchd.log`）はスクリプトが出力を自前のログへ
+  追記するため常に 0 バイトで、これを見ると「止まっている」ように見える（2026-09-23 ops#65 の誤検知）。
+- 再起動: `ssh MBP 'launchctl kickstart -k gui/501/com.kuma.yokohama-events-scrape'`（データ修復は不要。戻せる）
