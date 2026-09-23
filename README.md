@@ -1,92 +1,78 @@
-# yokohama-events
+# yokohama-events（サイト名「ヨコハマイベント帖」）
 
-馬車道・桜木町を中心に、関内・みなとみらい・山下公園・元町・山手・三溪園・横浜駅周辺までの
-イベント・催し物を自動収集してローカルHTMLで一覧表示するプロジェクト（ヨコハマイベント帖）。
+馬車道・桜木町を中心に、関内・みなとみらい・山下公園・元町・山手・三溪園・横浜駅周辺のイベントを毎日自動収集し、1枚の HTML で一覧表示する。
+[ops](https://github.com/wkumagai/ops) が管理する常時稼働システムの1つ。MacBook Pro 上の launchd ジョブが毎朝収集し、一覧は同じ Mac の launchd ジョブ `com.kuma.yokohama-events` が常時ポート 8788 で配信する（`http://<この Mac のホスト名>.local:8788/`）。HTML を直接開いても動く。
+外部サービス・認証・鍵は使わない。
 
-## クイックスタート（開発に参加する人向け）
-
-```bash
-git clone <このリポジトリ>
-cd yokohama-events
-pip3 install -r requirements.txt   # requests + beautifulsoup4 のみ
-python3 scraper/run.py             # イベント収集 → data/events.json, events.data.js 生成(数十分かかる)
-python3 -m http.server 8788        # → http://localhost:8788/ で表示
-```
-
-- サイト本体は `site/index.html` 1ファイル（素のHTML/CSS/JS、ビルド不要）
-- 情報源を追加するには `scraper/sources/` に1ファイル書いて `scraper/run.py` の `SOURCE_MODULES` に登録
-  （未実装の候補は `docs/sources.md` に約80源リストアップ済み）
-- 収集ポリシー（後述）を必ず守ること: リクエスト間2秒以上・本文/画像は転載しない
-
-## 構成（計画）
+## 使い方
 
 ```
-yokohama-events/
-├── README.md              ← このファイル
-├── docs/
-│   ├── sources.md         ← 情報源カタログ（約80源・実地調査済み 2026-07-05）
-│   └── categories.md      ← カテゴリ体系と正規化ルール
-├── scraper/
-│   ├── common.py          ← fetch(待機・UA・robots配慮)、正規化、重複排除
-│   ├── sources/           ← 情報源ごとに1ファイル（parse_xxx.py）
-│   └── run.py             ← 全ソース実行 → data/events.json 生成
-├── data/
-│   ├── events.json        ← 収集結果（正規イベントデータ）
-│   ├── events.data.js     ← 同内容を `const EVENTS=[...]` 形式で出力（file://直開き用）
-│   ├── annual.json        ← 毎年恒例イベントの静的リスト（手持ちデータ）
-│   └── overrides.json     ← カテゴリ等の手動補正
-└── site/
-    └── index.html         ← 一覧サイト本体（素のHTML/CSS/JS、ビルド不要）
+pip3 install -r requirements.txt                    # requests と beautifulsoup4 のみ
+python3 scraper/run.py                              # 収集して data/events.json と data/events.data.js を生成（数十分かかる）
+python3 -m http.server 8788                         # 手元で試すとき。常駐の配信は launchd ジョブが行う（下の「仕組み」）
+launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期実行を待たずに今すぐ収集する
 ```
 
-- **常駐サーバー**: launchd (`~/Library/LaunchAgents/com.<user>.yokohama-events.plist` 等) で
-  `python3 -m http.server 8788` をMac起動中は常に稼働させる想定。
-  - ローカル: http://localhost:8788/
-  - 同一Wi-Fi内の他端末(iPhone等)から: `http://<このMacのホスト名>.local:8788/`
-  - 外部公開する場合は Tailscale Funnel 等が手軽（`tailscale funnel --https=443 http://127.0.0.1:8788`）。
-    停止は `tailscale funnel --https=443 off`
-  - launchd停止: `launchctl bootout gui/$(id -u)/com.<user>.yokohama-events`
-- `site/index.html` を file:// で直接開いても動く（データは `events.data.js` のscript読込、キャッシュバスター付き）。
-- ★お気に入り: カード右上の星で登録、期間行の「★お気に入り」チップで絞り込み。localStorage保存なので**同じURL(オリジン)でアクセスし続けること**（localhostとfile://では別保存になる）。
-- **自動更新**: launchd (`~/Library/LaunchAgents/com.<user>.yokohama-events-scrape.plist` 等) で
-  毎朝6:00に `scraper/scrape_and_log.sh` → `scraper/run.py` を自動実行し、`data/events.json` / `events.data.js` を更新する。
-  ページ側はキャッシュ回避読み込みなので、再読み込みするだけで最新データが反映される。
-  - ログ: `logs/scrape.log`
-  - 今すぐ更新: `launchctl kickstart gui/$(id -u)/com.<user>.yokohama-events-scrape`
-  - 手動更新したい場合は従来通り `python3 scraper/run.py` でも可。
-- 公開するときは このフォルダをそのまま任意の静的ホスティングに置くだけ。
+- 一覧は `http://<この Mac のホスト名>.local:8788/`（同じ Mac では `http://localhost:8788/`）で開く
+- `site/index.html` をブラウザで直接（file://）開いても動く
+- 収集は 1 日 1 回、リクエスト間 2 秒以上、robots.txt を尊重する。保存するのはタイトル・日時・会場・カテゴリ・元 URL だけで、本文と画像は保存しない
 
-## イベントスキーマ
+## 画面の見方
 
-```json
-{
-  "id": "sha1(source+url+date)",
-  "title": "…",
-  "start_date": "2026-07-10",
-  "end_date": "2026-07-21",
-  "time": "19:00開演（分かれば）",
-  "venue": "横浜能楽堂",
-  "area": "sakuragicho",
-  "category": "traditional",
-  "tags": ["paid", "indoor", "one_day"],
-  "url": "https://…（必ず元サイトへ誘導）",
-  "source": "yokohama-nohgakudou"
-}
-```
+| 場所 | 意味 |
+|---|---|
+| 期間の行（すべて／今日／今週末／7日以内／30日以内） | 開催期間で絞り込む |
+| ★ お気に入り | 星を付けたイベントだけ表示する。件数は括弧内 |
+| エリアの行・カテゴリの行 | それぞれで絞り込む。期間・エリア・カテゴリ・キーワードの条件はすべて AND |
+| キーワード欄 | イベント名と会場名で絞り込む |
+| 「区民施設の講座・教室も表示」 | 外すと区の施設のイベントを隠す |
+| 右端の「N件」 | 現在の絞り込みに合う件数 |
+| 一覧の区切り | 期間を選ぶと「単発・短期」と「長期開催中」に分かれる。「すべて」では「開催中」の後に月ごとに並ぶ。各区切りは 24 件を超えると「残り N 件をすべて表示」ボタンが出る |
+| カードの ☆ | お気に入りに追加・解除。カードの背表紙の色はカテゴリ |
+| カードのリンク | 必ず元サイトへ移動する |
 
-## 実装フェーズ
+**お気に入りはブラウザの localStorage に保存されるため、同じ URL で開き続けること。** `http://localhost:8788/` と file:// では別々に保存される。
 
-1. **Phase 1（最小動作）**: Tier 1アグリゲータ4本（welcome.city / アートナビ / minatomirai21 / 区版イベント検索）
-   + RSSが生きている施設（にぎわい座・赤レンガ1号館・BUNTAI・人形の家・近代文学館・大佛次郎記念館・アソビル・西口エリマネ等）
-   + annual.json（恒例イベント）→ site/index.html で一覧・エリア/カテゴリ絞込
-2. **Phase 2（施設直取り）**: 静的HTMLの主要施設パーサーを順次追加
-   （能楽堂・関内ホール・KAAT・音楽堂・みなとみらいホール・大さん橋・市役所アトリウム・三溪園・山手西洋館…）
-3. **Phase 3（難物）**: Playwright導入でJS必須サイト（パシフィコ・マークイズ等）、
-   bot遮断サイト（高島屋・スカイビル・京急ミュージアム）はwelcome.city/PR TIMES経由の代替取得
-4. **Phase 4（公開）**: 静的ホスティングへ配置（別途）
+## 仕組み
 
-## 収集ポリシー
+- launchd のジョブ `com.kuma.yokohama-events`（設定ファイルは `~/Library/LaunchAgents/com.kuma.yokohama-events.plist`）が `python3 -m http.server 8788` を常駐させ、一覧を配信する。ops-local の監視対象では「横浜イベント配信」
+- launchd のジョブ `com.kuma.yokohama-events-scrape` が毎朝 06:00 に `scraper/scrape_and_log.sh` を実行する。ログは `logs/scrape.log`（1 MB を超えると末尾 2000 行だけ残す）
+- `scraper/run.py` が `scraper/sources/` の情報源モジュールを順に実行し、`data/annual.json`（毎年恒例のイベント）を加える
+- 終了済み・400 日より先・日付のないイベントを除外し、重複を統合する（タイトルと開始日の完全一致、次に表記ゆれ）。優先順は施設の公式サイト > 専門の集約サイト > 汎用の集約サイト > 区の施設 > 恒例
+- `data/overrides.json` があれば、イベント id ごとの手動補正を上書きする
+- `data/events.json` と `data/events.data.js` を書き出す。ページは `events.data.js` をキャッシュを避けて読むため、ブラウザを再読み込みするだけで最新になる
+- 取得は `scraper/common.py` の `fetch()` が担い、間隔 2 秒・User-Agent 明示・失敗時は間隔を空けて再試行する。TLS で失敗するサイトは curl で取得する
 
-- 1日1回巡回・リクエスト間2秒以上、robots.txt尊重
-- 保存はタイトル/日時/会場/カテゴリ/元URLのみ。本文・画像は転載せずリンク誘導
-- connpassはAPI以外禁止、Peatixは対象外（docs/sources.md 参照）
+## 対象と設定
+
+| 何 | どこ |
+|---|---|
+| 収集する情報源とその優先順 | `scraper/run.py` の `SOURCE_MODULES` |
+| 情報源ごとの取得処理 | `scraper/sources/<名前>.py`（`scrape()` がイベントの list を返す） |
+| 毎年恒例のイベント | `data/annual.json` |
+| カテゴリ・エリアの手動補正（任意） | `data/overrides.json`（`id` で対象を指定し、他のキーを上書き） |
+| カテゴリの体系と判定ルール | [docs/categories.md](docs/categories.md) |
+| 情報源の候補（未実装を含む） | [docs/sources.md](docs/sources.md) |
+| 一覧ページ | `site/index.html`（素の HTML/CSS/JS、ビルド不要） |
+
+`SOURCE_MODULES` に登録されていて `scraper/sources/` に実装がない情報源は `not implemented yet, skipped` と表示して飛ばす。これは正常。
+
+## 障害時の対処
+
+| 症状 | 対処 |
+|---|---|
+| 一覧が古い | `tail -n 30 logs/scrape.log` で最終実行の時刻と結果を確認する。実行されていなければ `launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape`。実行後にブラウザを再読み込みする |
+| launchd の標準出力ログが 0 バイトで止まって見える | 正常。スクリプトが出力を `logs/scrape.log` に自前で追記するため、launchd 側のログは常に空になる。実行記録は `logs/scrape.log` と `data/events.json` の更新時刻で見る |
+| ある情報源だけ 0 件、または `ERROR:` になる | `python3 scraper/run.py` を手で実行し、`[<名前>]` で始まる行と末尾の `stats:` を見る。相手サイトの構造が変わったなら `scraper/sources/<名前>.py` を直す |
+| `! HTTP 4xx` や `! fetch error` が続く | 一時的なら翌日の実行を待つ。同じ情報源で続くなら URL とパーサーを見直す。取得先の負荷にならないよう再試行を増やさない |
+| ページが開けない | 配信ジョブを再起動する: `launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events`。それでも開けなければ、代替としてリポジトリのディレクトリで `python3 -m http.server 8788` を起動する |
+| お気に入りが消えた | 別の URL（localhost と file://、ホスト名の違い）で開いている。以前と同じ URL で開く |
+| 収集を止めたい | `launchctl bootout gui/$(id -u)/com.kuma.yokohama-events-scrape`。再開は launchd の設定ファイル（plist）を `launchctl bootstrap gui/$(id -u) <plist のパス>` で登録し直す |
+
+## 開発
+
+自動テストは無い。変更後は `python3 scraper/run.py` を実行し、末尾の `Total:` と `stats:` に `ERROR` が無いことと、ブラウザで一覧が表示されることを確認する。
+
+情報源を追加するには `scraper/sources/` に 1 ファイル書き、`scraper/run.py` の `SOURCE_MODULES` に登録する。取得は必ず `common.fetch()` か `common.scrape_rss()` を通す。
+
+運用手順は [docs/runbook.md](docs/runbook.md)、ディレクトリ構成・イベントのデータ形式・収集の方針・経緯は [docs/background.md](docs/background.md)。
