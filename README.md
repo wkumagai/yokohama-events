@@ -1,7 +1,7 @@
 # yokohama-events（サイト名「ヨコハマイベント帖」）
 
 馬車道・桜木町を中心に、関内・みなとみらい・山下公園・元町・山手・三溪園・横浜駅周辺のイベントを毎日自動収集し、1枚の HTML で一覧表示する。
-[ops](https://github.com/wkumagai/ops) が管理する常時稼働システムの1つ。MacBook Pro 上の launchd ジョブが毎朝収集し、一覧はその Mac で Web サーバーを起動するか、HTML を直接開いて見る。
+[ops](https://github.com/wkumagai/ops) が管理する常時稼働システムの1つ。MacBook Pro 上の launchd ジョブが毎朝収集し、一覧は同じ Mac の launchd ジョブ `com.kuma.yokohama-events` が常時ポート 8788 で配信する（`http://<この Mac のホスト名>.local:8788/`）。HTML を直接開いても動く。
 外部サービス・認証・鍵は使わない。
 
 ## 使い方
@@ -9,11 +9,11 @@
 ```
 pip3 install -r requirements.txt                    # requests と beautifulsoup4 のみ
 python3 scraper/run.py                              # 収集して data/events.json と data/events.data.js を生成（数十分かかる）
-python3 -m http.server 8788                         # http://localhost:8788/ で一覧を表示
+python3 -m http.server 8788                         # 手元で試すとき。常駐の配信は launchd ジョブが行う（下の「仕組み」）
 launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期実行を待たずに今すぐ収集する
 ```
 
-- 同じ Wi-Fi 内の他の端末からは `http://<この Mac のホスト名>.local:8788/` で開ける
+- 一覧は `http://<この Mac のホスト名>.local:8788/`（同じ Mac では `http://localhost:8788/`）で開く
 - `site/index.html` をブラウザで直接（file://）開いても動く
 - 収集は 1 日 1 回、リクエスト間 2 秒以上、robots.txt を尊重する。保存するのはタイトル・日時・会場・カテゴリ・元 URL だけで、本文と画像は保存しない
 
@@ -35,6 +35,7 @@ launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期�
 
 ## 仕組み
 
+- launchd のジョブ `com.kuma.yokohama-events`（設定ファイルは `~/Library/LaunchAgents/com.kuma.yokohama-events.plist`）が `python3 -m http.server 8788` を常駐させ、一覧を配信する。ops-local の監視対象では「横浜イベント配信」
 - launchd のジョブ `com.kuma.yokohama-events-scrape` が毎朝 06:00 に `scraper/scrape_and_log.sh` を実行する。ログは `logs/scrape.log`（1 MB を超えると末尾 2000 行だけ残す）
 - `scraper/run.py` が `scraper/sources/` の情報源モジュールを順に実行し、`data/annual.json`（毎年恒例のイベント）を加える
 - 終了済み・400 日より先・日付のないイベントを除外し、重複を統合する（タイトルと開始日の完全一致、次に表記ゆれ）。優先順は施設の公式サイト > 専門の集約サイト > 汎用の集約サイト > 区の施設 > 恒例
@@ -64,7 +65,7 @@ launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期�
 | launchd の標準出力ログが 0 バイトで止まって見える | 正常。スクリプトが出力を `logs/scrape.log` に自前で追記するため、launchd 側のログは常に空になる。実行記録は `logs/scrape.log` と `data/events.json` の更新時刻で見る |
 | ある情報源だけ 0 件、または `ERROR:` になる | `python3 scraper/run.py` を手で実行し、`[<名前>]` で始まる行と末尾の `stats:` を見る。相手サイトの構造が変わったなら `scraper/sources/<名前>.py` を直す |
 | `! HTTP 4xx` や `! fetch error` が続く | 一時的なら翌日の実行を待つ。同じ情報源で続くなら URL とパーサーを見直す。取得先の負荷にならないよう再試行を増やさない |
-| ページが開けない | Web サーバーが動いていない。リポジトリのディレクトリで `python3 -m http.server 8788` を起動する |
+| ページが開けない | 配信ジョブを再起動する: `launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events`。それでも開けなければ、代替としてリポジトリのディレクトリで `python3 -m http.server 8788` を起動する |
 | お気に入りが消えた | 別の URL（localhost と file://、ホスト名の違い）で開いている。以前と同じ URL で開く |
 | 収集を止めたい | `launchctl bootout gui/$(id -u)/com.kuma.yokohama-events-scrape`。再開は launchd の設定ファイル（plist）を `launchctl bootstrap gui/$(id -u) <plist のパス>` で登録し直す |
 

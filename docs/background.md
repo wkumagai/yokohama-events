@@ -67,7 +67,7 @@ yokohama-events/
 
 ## 配信と公開
 
-- 一覧の配信は `python3 -m http.server 8788`。Mac の起動中は常に動かす想定で、launchd のジョブにする計画だった
+- 一覧の配信は `python3 -m http.server 8788`。launchd のジョブ `com.kuma.yokohama-events` として常駐させている
 - 同じ Wi-Fi 内の他の端末（iPhone 等）からは `http://<この Mac のホスト名>.local:8788/`
 - 外部に公開する場合は Tailscale Funnel が手軽: `tailscale funnel --https=443 http://127.0.0.1:8788`（停止は `tailscale funnel --https=443 off`）
 - 静的ホスティングに置く場合は、このフォルダをそのまま配置すればよい

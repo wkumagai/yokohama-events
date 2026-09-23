@@ -26,3 +26,4 @@
   launchd の StandardOutPath（`/tmp/yokohama-events-scrape-launchd.log`）はスクリプトが出力を自前のログへ
   追記するため常に 0 バイトで、これを見ると「止まっている」ように見える（2026-09-23 ops#65 の誤検知）。
 - 再起動: `ssh MBP 'launchctl kickstart -k gui/501/com.kuma.yokohama-events-scrape'`（データ修復は不要。戻せる）
+- 一覧の配信は launchd `com.kuma.yokohama-events`（常駐、ポート 8788、plist `~/Library/LaunchAgents/com.kuma.yokohama-events.plist`）。再起動: `ssh MBP 'launchctl kickstart -k gui/501/com.kuma.yokohama-events'`
