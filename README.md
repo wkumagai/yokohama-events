@@ -35,7 +35,7 @@ launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期�
 
 ## 仕組み
 
-- launchd のジョブ `com.kuma.yokohama-events`（設定ファイルは `~/Library/LaunchAgents/com.kuma.yokohama-events.plist`）が `python3 -m http.server 8788` を常駐させ、一覧を配信する。ops-local の監視対象では「横浜イベント配信」
+- launchd のジョブ `com.kuma.yokohama-events`（設定ファイルは `~/Library/LaunchAgents/com.kuma.yokohama-events.plist`）が `python3 -m http.server 8788` を常駐させ、一覧を配信する。specula の監視対象では「横浜イベント配信」
 - launchd のジョブ `com.kuma.yokohama-events-scrape` が毎朝 06:00 に `scraper/scrape_and_log.sh` を実行する。ログは `logs/scrape.log`（1 MB を超えると末尾 2000 行だけ残す）
 - `scraper/run.py` が `scraper/sources/` の情報源モジュールを順に実行し、`data/annual.json`（毎年恒例のイベント）を加える
 - 終了済み・400 日より先・日付のないイベントを除外し、重複を統合する（タイトルと開始日の完全一致、次に表記ゆれ）。優先順は施設の公式サイト > 専門の集約サイト > 汎用の集約サイト > 区の施設 > 恒例
