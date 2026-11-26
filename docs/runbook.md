@@ -21,14 +21,17 @@
   2. `git -C ~/yokohama-events pull --ff-only origin main`（通らなければ止めて、手元の変更を確かめる）。
   3. `deploy/` の雛形か `requirements.txt` が変わったときは、`~/yokohama-events/deploy/install.sh`（雛形を書き出して 2 つとも入れ直す）。`scraper/` だけの変更なら要らない（次の 06:00 に新しいコードで動く）。
   4. 確かめ: `launchctl print gui/$(id -u)/com.kuma.yokohama-events` の `program` が plist の解釈系、`curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8788/` が 200。
-     取得を変えたときは `launchctl kickstart gui/$(id -u)/com.kuma.yokohama-events-scrape` → 数十分後に `tail -n 5 ~/yokohama-events/logs/scrape.log` が `scrape end` で、`stats:` に `ERROR` が無い。
+     取得を変えたときは `launchctl kickstart gui/$(id -u)/com.kuma.yokohama-events-scrape` → 数分後（2026-11-24〜26 の 06:00 の取得は 3〜4 分）に `tail -n 5 ~/yokohama-events/logs/scrape.log` が `scrape end` で、`stats:` に `ERROR` が無い。
 - 1 回目だけ（2026-11-26 に見た本番はブランチ `fix/public-dir-5`。origin に無い #5 のコミット `cb86156` が 1 つ。`data/`・`scraper/` は main と同じ）:
   手順 1 の前に `git -C ~/yokohama-events switch main`（`data/` の手元の変更はそのまま持ち越す）。`fix/public-dir-5` は手元に残る（#5 で扱う）。
   続けて 2〜4（3 は要る。plist を雛形から入れ直す）。
-- 所要時間: 入れ直しは数秒（その間 8788 は答えない）。取得の確かめは数十分。
+- 所要時間: 入れ直しは数秒（その間 8788 は答えない）。取得の確かめは数分。
+- 避ける時間: 06:00 からの数分（取得の最中に `deploy/install.sh` を流すと、bootout がその回の取得を止める）。
 
 ## 復旧
-- ロールバック手順（1コマンドで戻るなら、そのコマンド）: main で戻す PR（revert）をマージし、「デプロイ」の手順で入れる。解釈系だけを急いで戻すなら、`~/Library/LaunchAgents/com.kuma.yokohama-events.plist` の先頭の引数を `/usr/bin/python3` に替えて `launchctl bootout gui/$(id -u)/com.kuma.yokohama-events; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.kuma.yokohama-events.plist`（3.9 に requests・bs4 は残っている）。
+- ロールバック手順（1コマンドで戻るなら、そのコマンド）: main で戻す PR（revert）をマージし、「デプロイ」の手順で入れる。解釈系だけを急いで戻すなら:
+  - 配信: `~/Library/LaunchAgents/com.kuma.yokohama-events.plist` の先頭の引数を `/usr/bin/python3` に替え、`launchctl bootout gui/$(id -u)/com.kuma.yokohama-events` → `launchctl print gui/$(id -u)/com.kuma.yokohama-events` が失敗する（消えた）のを待つ → `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.kuma.yokohama-events.plist`（間を置かずに続けると `Bootstrap failed: 5` になりうる）。
+  - 取得: 解釈系は追跡しているファイル `scraper/scrape_and_log.sh` の中にあるので、本番の作業ツリーで手で替えない（手元の変更が残り、次の `pull --ff-only` が止まる）。revert の PR で戻す。`/usr/bin/python3` にも requests・bs4 は残っている。
 - 再起動手順:
 - データ修復が必要になる典型（＝5類型1、人の判断）:
 

@@ -248,7 +248,7 @@
 
 <footer>
   <p>収集元: 横浜市観光情報サイト ／ ヨコハマ・アートナビ ／ みなとみらい21公式 ／ 横浜市 区版イベント情報(中区・西区) ／ 横浜赤レンガ倉庫 ／ 横浜市役所アトリウム ／ 恒例イベント年間リスト</p>
-  <p>各イベントの詳細・最新情報は必ずリンク先の公式ページで確認してください。「日程目安」の恒例イベントは過去実績からの推定です。<br>更新: <code>python3 scraper/run.py</code> → ブラウザ再読み込み</p>
+  <p>各イベントの詳細・最新情報は必ずリンク先の公式ページで確認してください。「日程目安」の恒例イベントは過去実績からの推定です。<br>更新: <code>/opt/homebrew/bin/python3.12 scraper/run.py</code> → ブラウザ再読み込み</p>
 </footer>
 
 <button id="totop" title="先頭へ">↑</button>
@@ -547,7 +547,7 @@ window.__initApp = function () {
 
   document.getElementById("generated").textContent = META.generated_at
     ? `最終更新 ${META.generated_at.replace("T", " ")}`
-    : "データ未生成: python3 scraper/run.py を実行してください";
+    : "データ未生成: /opt/homebrew/bin/python3.12 scraper/run.py を実行してください";
 
   buildStats();
   updateFavChip();

@@ -2,14 +2,23 @@
 # 配信と取得の launchd ジョブを (再)セットアップする（docs/runbook.md の「デプロイ」）。何度流しても同じ状態になる。
 #   ~/yokohama-events/deploy/install.sh
 # 雛形は本番の作業ツリー（~/yokohama-events。main）のもの。__HOME__ をこの Mac の $HOME で書き出し、形を確かめてから置き、
-# bootout → bootstrap で入れ直す。解釈系（/opt/homebrew/bin/python3.12）が無い・requests と bs4 が無い・本番が main でないときは入れずに止まる。
+# bootout → bootstrap で入れ直す。MBP でない・解釈系（/opt/homebrew/bin/python3.12）が無い・requests と bs4 が無い・本番が main でないときは入れずに止まる。
+# 入れた後に配信が 200 を返さなければ終了コード 1。
 set -euo pipefail
+
+RENDERED=""
+trap 'rm -f "$RENDERED"' EXIT   # 途中で止まっても書き出しの一時ファイルを残さない
 
 LIVE="$HOME/yokohama-events"
 PY=/opt/homebrew/bin/python3.12
 DOMAIN="gui/$(id -u)"
 LABELS="com.kuma.yokohama-events com.kuma.yokohama-events-scrape"
 
+# 本番は MBP だけ（MBA の 2 つのジョブは disable 済み。enable で外さないように、ほかの機体では入れない）
+if [ "$(scutil --get LocalHostName)" != "WatarunoMacBook-Pro" ]; then
+  echo "本番は MBP（WatarunoMacBook-Pro）だけ。この機体: $(scutil --get LocalHostName)" >&2
+  exit 1
+fi
 if [ ! -x "$PY" ]; then
   echo "$PY が無い（brew install python@3.12）" >&2
   exit 1
@@ -31,7 +40,6 @@ for LABEL in $LABELS; do
   plutil -lint "$RENDERED" >/dev/null
   if [ "$(/usr/libexec/PlistBuddy -c 'Print :Label' "$RENDERED")" != "$LABEL" ]; then
     echo "$LIVE/deploy/$LABEL.plist の Label が $LABEL ではない" >&2
-    rm -f "$RENDERED"
     exit 1
   fi
   DST="$HOME/Library/LaunchAgents/$LABEL.plist"
@@ -48,4 +56,9 @@ for _ in $(seq 1 40); do
   curl -fs -o /dev/null http://127.0.0.1:8788/ 2>/dev/null && break
   sleep 0.25
 done
-echo "配信: http://127.0.0.1:8788/ → $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8788/ || true)"
+CODE="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8788/ || true)"
+echo "配信: http://127.0.0.1:8788/ → $CODE"
+if [ "$CODE" != 200 ]; then
+  echo "配信が 200 を返さない（launchctl print gui/$(id -u)/com.kuma.yokohama-events と ~/yokohama-events/logs を見る）" >&2
+  exit 1
+fi

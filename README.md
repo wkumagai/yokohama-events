@@ -8,7 +8,7 @@
 
 ```
 /opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages -r requirements.txt   # requests と beautifulsoup4 のみ
-/opt/homebrew/bin/python3.12 scraper/run.py         # 収集して data/events.json と data/events.data.js を生成（数十分かかる）
+/opt/homebrew/bin/python3.12 scraper/run.py         # 収集して data/events.json と data/events.data.js を生成（数分かかる。2026-11-24〜26 の 06:00 の取得は 3〜4 分）
 /opt/homebrew/bin/python3.12 -m http.server 8788    # 手元で試すとき。常駐の配信は launchd ジョブが行う（下の「仕組み」）
 launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期実行を待たずに今すぐ収集する
 ```

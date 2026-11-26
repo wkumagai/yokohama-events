@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """全ソースを実行して data/events.json と data/events.data.js を生成する。
-使い方: python3 scraper/run.py [--skip-fetch]
+使い方: /opt/homebrew/bin/python3.12 scraper/run.py [--skip-fetch]
 """
 import json
 import os
@@ -153,7 +153,7 @@ def main():
     with open(os.path.join(DATA, "events.json"), "w", encoding="utf-8") as f:
         json.dump({"meta": meta, "events": result}, f, ensure_ascii=False, indent=1)
     with open(os.path.join(DATA, "events.data.js"), "w", encoding="utf-8") as f:
-        f.write("// 自動生成: python3 scraper/run.py\n")
+        f.write("// 自動生成: /opt/homebrew/bin/python3.12 scraper/run.py\n")
         f.write("window.EVENTS_META = " + json.dumps(meta, ensure_ascii=False) + ";\n")
         f.write("window.EVENTS = " + json.dumps(result, ensure_ascii=False) + ";\n")
     print(f"\nTotal: {len(result)} events (raw {len(all_events)}, dedup/filtered)")
