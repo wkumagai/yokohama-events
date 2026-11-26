@@ -1,10 +1,11 @@
 #!/bin/bash
 # launchdから毎朝呼ばれる更新スクリプト。実行ログを1本に残す(先頭に開始時刻)。
+# 解釈系は Homebrew の /opt/homebrew/bin/python3.12（requests・beautifulsoup4 を入れてある。2026-11-26 まで macOS 付属の /usr/bin/python3。yokohama-events#8）。
 set -u
 cd "$(dirname "$0")/.."
 {
   echo "===== $(date '+%Y-%m-%d %H:%M:%S') scrape start ====="
-  /usr/bin/python3 scraper/run.py
+  /opt/homebrew/bin/python3.12 scraper/run.py
   echo "===== $(date '+%Y-%m-%d %H:%M:%S') scrape end ====="
 } >> logs/scrape.log 2>&1
 

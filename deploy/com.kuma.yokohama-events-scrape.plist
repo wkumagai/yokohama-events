@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  毎朝 06:00 の取得（MBP）。scraper/scrape_and_log.sh が /opt/homebrew/bin/python3.12 で scraper/run.py を動かし、logs/scrape.log に追記する
+  （このジョブの標準出力のログはいつも 0 バイト。docs/runbook.md の「既知の癖」）。
+  雛形: deploy/install.sh が __HOME__ をこの Mac の $HOME に置き換えて ~/Library/LaunchAgents へ置く（docs/runbook.md の「デプロイ」）。
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.kuma.yokohama-events-scrape</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>__HOME__/yokohama-events/scraper/scrape_and_log.sh</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>/tmp/yokohama-events-scrape-launchd.log</string>
+	<key>StandardOutPath</key>
+	<string>/tmp/yokohama-events-scrape-launchd.log</string>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>6</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+	</array>
+</dict>
+</plist>
