@@ -59,6 +59,6 @@ done
 CODE="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8788/ || true)"
 echo "配信: http://127.0.0.1:8788/ → $CODE"
 if [ "$CODE" != 200 ]; then
-  echo "配信が 200 を返さない（launchctl print gui/$(id -u)/com.kuma.yokohama-events と ~/yokohama-events/logs を見る）" >&2
+  echo "配信が 200 を返さない（launchctl print gui/$(id -u)/com.kuma.yokohama-events と、配信のログ /tmp/yokohama-events-server.log〔plist の StandardErrorPath〕を見る）" >&2
   exit 1
 fi
