@@ -7,9 +7,9 @@
 ## 使い方
 
 ```
-pip3 install -r requirements.txt                    # requests と beautifulsoup4 のみ
-python3 scraper/run.py                              # 収集して data/events.json と data/events.data.js を生成（数十分かかる）
-python3 -m http.server 8788                         # 手元で試すとき。常駐の配信は launchd ジョブが行う（下の「仕組み」）
+/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages -r requirements.txt   # requests と beautifulsoup4 のみ
+/opt/homebrew/bin/python3.12 scraper/run.py         # 収集して data/events.json と data/events.data.js を生成（数分かかる。2026-11-24〜26 の 06:00 の取得は 3〜4 分）
+/opt/homebrew/bin/python3.12 -m http.server 8788    # 手元で試すとき。常駐の配信は launchd ジョブが行う（下の「仕組み」）
 launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期実行を待たずに今すぐ収集する
 ```
 
@@ -35,8 +35,8 @@ launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期�
 
 ## 仕組み
 
-- launchd のジョブ `com.kuma.yokohama-events`（設定ファイルは `~/Library/LaunchAgents/com.kuma.yokohama-events.plist`）が `python3 -m http.server 8788` を常駐させ、一覧を配信する。specula の監視対象では「横浜イベント配信」
-- launchd のジョブ `com.kuma.yokohama-events-scrape` が毎朝 06:00 に `scraper/scrape_and_log.sh` を実行する。ログは `logs/scrape.log`（1 MB を超えると末尾 2000 行だけ残す）
+- launchd のジョブ `com.kuma.yokohama-events`（設定ファイルは `~/Library/LaunchAgents/com.kuma.yokohama-events.plist`。雛形は `deploy/` にあり、`deploy/install.sh` が入れる）が `/opt/homebrew/bin/python3.12 -m http.server 8788` を常駐させ、一覧を配信する。specula の監視対象では「横浜イベント配信」
+- launchd のジョブ `com.kuma.yokohama-events-scrape` が毎朝 06:00 に `scraper/scrape_and_log.sh` を実行する（中で `/opt/homebrew/bin/python3.12 scraper/run.py`）。ログは `logs/scrape.log`（1 MB を超えると末尾 2000 行だけ残す）
 - `scraper/run.py` が `scraper/sources/` の情報源モジュールを順に実行し、`data/annual.json`（毎年恒例のイベント）を加える
 - 終了済み・400 日より先・日付のないイベントを除外し、重複を統合する（タイトルと開始日の完全一致、次に表記ゆれ）。優先順は施設の公式サイト > 専門の集約サイト > 汎用の集約サイト > 区の施設 > 恒例
 - `data/overrides.json` があれば、イベント id ごとの手動補正を上書きする
@@ -63,15 +63,15 @@ launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape   # 定期�
 |---|---|
 | 一覧が古い | `tail -n 30 logs/scrape.log` で最終実行の時刻と結果を確認する。実行されていなければ `launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events-scrape`。実行後にブラウザを再読み込みする |
 | launchd の標準出力ログが 0 バイトで止まって見える | 正常。スクリプトが出力を `logs/scrape.log` に自前で追記するため、launchd 側のログは常に空になる。実行記録は `logs/scrape.log` と `data/events.json` の更新時刻で見る |
-| ある情報源だけ 0 件、または `ERROR:` になる | `python3 scraper/run.py` を手で実行し、`[<名前>]` で始まる行と末尾の `stats:` を見る。相手サイトの構造が変わったなら `scraper/sources/<名前>.py` を直す |
+| ある情報源だけ 0 件、または `ERROR:` になる | `/opt/homebrew/bin/python3.12 scraper/run.py` を手で実行し、`[<名前>]` で始まる行と末尾の `stats:` を見る。相手サイトの構造が変わったなら `scraper/sources/<名前>.py` を直す |
 | `! HTTP 4xx` や `! fetch error` が続く | 一時的なら翌日の実行を待つ。同じ情報源で続くなら URL とパーサーを見直す。取得先の負荷にならないよう再試行を増やさない |
-| ページが開けない | 配信ジョブを再起動する: `launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events`。それでも開けなければ、代替としてリポジトリのディレクトリで `python3 -m http.server 8788` を起動する |
+| ページが開けない | 配信ジョブを再起動する: `launchctl kickstart -k gui/$(id -u)/com.kuma.yokohama-events`。それでも開けなければ、代替としてリポジトリのディレクトリで `/opt/homebrew/bin/python3.12 -m http.server 8788` を起動する |
 | お気に入りが消えた | 別の URL（localhost と file://、ホスト名の違い）で開いている。以前と同じ URL で開く |
-| 収集を止めたい | `launchctl bootout gui/$(id -u)/com.kuma.yokohama-events-scrape`。再開は launchd の設定ファイル（plist）を `launchctl bootstrap gui/$(id -u) <plist のパス>` で登録し直す |
+| 収集を止めたい | `launchctl bootout gui/$(id -u)/com.kuma.yokohama-events-scrape`。再開は `deploy/install.sh`（docs/runbook.md の「デプロイ」） |
 
 ## 開発
 
-自動テストは無い。変更後は `python3 scraper/run.py` を実行し、末尾の `Total:` と `stats:` に `ERROR` が無いことと、ブラウザで一覧が表示されることを確認する。
+自動テストは無い。変更後は `/opt/homebrew/bin/python3.12 scraper/run.py` を実行し、末尾の `Total:` と `stats:` に `ERROR` が無いことと、ブラウザで一覧が表示されることを確認する。
 
 情報源を追加するには `scraper/sources/` に 1 ファイル書き、`scraper/run.py` の `SOURCE_MODULES` に登録する。取得は必ず `common.fetch()` か `common.scrape_rss()` を通す。
 
