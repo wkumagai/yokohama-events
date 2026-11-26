@@ -1,6 +1,6 @@
 #!/bin/bash
 # launchdから毎朝呼ばれる更新スクリプト。実行ログを1本に残す(先頭に開始時刻)。
-# 解釈系は Homebrew の /opt/homebrew/bin/python3.12（requests・beautifulsoup4 を入れてある。2026-11-26 まで macOS 付属の /usr/bin/python3。yokohama-events#8）。
+# 解釈系は Homebrew の /opt/homebrew/bin/python3.12（requests・beautifulsoup4 を入れてある。前は macOS 付属の /usr/bin/python3。yokohama-events#8）。
 set -u
 cd "$(dirname "$0")/.."
 {
