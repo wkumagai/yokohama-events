@@ -3,7 +3,7 @@
 <!--
   一覧の配信（MBP）。ポート 8788 で本番の作業ツリー（~/yokohama-events）を配る。
   雛形: deploy/install.sh が __HOME__ をこの Mac の $HOME に置き換えて ~/Library/LaunchAgents へ置く（docs/runbook.md の「デプロイ」）。
-  解釈系は Homebrew の /opt/homebrew/bin/python3.12（2026-11-26 まで macOS 付属の /usr/bin/python3〔3.9〕。yokohama-events#8）。
+  解釈系は Homebrew の /opt/homebrew/bin/python3.12（前は macOS 付属の /usr/bin/python3〔3.9〕。yokohama-events#8）。
 -->
 <plist version="1.0">
 <dict>
